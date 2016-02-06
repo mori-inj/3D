@@ -1,7 +1,14 @@
 #include <windows.h>
 #include <gdiplus.h>
+#include <utility>
+#include <math.h>
 //#include "resource.h"
+
+#define LL long long
+
 using namespace Gdiplus;
+using namespace std;
+
 #pragma comment(lib, "gdiplus")
 
 
@@ -13,6 +20,49 @@ LPCTSTR lpszClass = TEXT("GdiPlusStart");
 void OnPaint(HDC hdc, int ID, int x, int y);
 void OnPaintA(HDC hdc, int ID, int x, int y, double alpha);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
+
+LL D,theta,phi;
+double ox,oy,oz;
+const double PI = 3.14159265358979;
+
+pair<double,double> transform(LL Px, LL Py, LL Pz)
+{
+	double A = ox*Px + oy*Py+ oz*Pz;
+	double m = D*(Pz/A-oz)/sqrt(ox*ox+oy*oy);
+	double n = D*(Px*oy-Py*ox)/(A*sqrt(ox*ox+oy*oy));
+
+	return make_pair(m,n);
+}
+
+
+class Cube
+{
+	private:
+		LL x;
+		LL y;
+		LL z;
+		LL size;
+	public:
+		void Set(LL x, LL y, LL z)
+		{
+			this->x = x;
+			this->y = y;
+			this->z = z;
+		}
+		void Set(LL x, LL y, LL z, LL size)
+		{
+			this->x = x;
+			this->y = y;
+			this->z = z;
+			this->size = size;
+		}
+		void Draw(HDC MemDC)
+		{
+			double m = transform(x,y,z).first;
+			double n = transform(x,y,z).second;
+			SetPixel(MemDC, m, n, RGB(255,255,255));
+		}
+};
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
@@ -98,8 +148,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		//FillRect(MemDC, &crt, hBrush);
 		SetBkColor(MemDC, RGB(255, 255, 255));
 
-
-
+		for(int i=250; i<=350; i++)
+			for(int j=350; j<=450; j++)
+			SetPixel(MemDC, j, i, RGB(rand()%255, rand()%255, rand()%255));
 		//OnPaint(MemDC, TITLE0, 0, 0);
 
 		BitBlt(hdc, 0, 0, crt.right, crt.bottom, MemDC, 0, 0, SRCCOPY);
