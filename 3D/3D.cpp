@@ -1,6 +1,8 @@
 #include <windows.h>
 #include <gdiplus.h>
 #include <utility>
+#include <string>
+#include <sstream>
 #include <math.h>
 //#include "resource.h"
 
@@ -21,8 +23,8 @@ void OnPaint(HDC hdc, int ID, int x, int y);
 void OnPaintA(HDC hdc, int ID, int x, int y, double alpha);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 
-LL D,theta,phi;
-double ox,oy,oz;
+LL D=60;
+double ox=1,oy=0,oz=0,delta=1,theta=0,phi=90;
 const double PI = 3.14159265358979;
 
 pair<double,double> transform(LL Px, LL Py, LL Pz)
@@ -31,36 +33,72 @@ pair<double,double> transform(LL Px, LL Py, LL Pz)
 	double m = D*(Pz/A-oz)/sqrt(ox*ox+oy*oy);
 	double n = D*(Px*oy-Py*ox)/(A*sqrt(ox*ox+oy*oy));
 
-	return make_pair(m,n);
+	return make_pair(m+400,n+300);
 }
 
+class point3
+{
+	public:
+		LL x;
+		LL y;
+		LL z;
+};
 
 class Cube
 {
 	private:
-		LL x;
-		LL y;
-		LL z;
+		point3 p;
+		point3 points[8];
 		LL size;
 	public:
 		void Set(LL x, LL y, LL z)
 		{
-			this->x = x;
-			this->y = y;
-			this->z = z;
+			this->p.x = x;
+			this->p.y = y;
+			this->p.z = z;
+			for(int i=0; i<8; i++)
+			{
+				points[i].x=x+(i%2==0)? size/2 : -size/2;
+				points[i].y=y+(i/2%2==0)? size/2 : -size/2;
+				points[i].z=z+(i/4%2==0)? size/2 : -size/2;
+			}
 		}
 		void Set(LL x, LL y, LL z, LL size)
 		{
-			this->x = x;
-			this->y = y;
-			this->z = z;
+			this->p.x = x;
+			this->p.y = y;
+			this->p.z = z;
 			this->size = size;
+
+			for(int i=0; i<8; i++)
+			{
+				points[i].x= x + ((i%2==0)? (size/2) : (-size/2));
+				points[i].y= y + (((i/2)%2==0)? (size/2) : (-size/2));
+				points[i].z= z + (((i/4)%2==0)? (size/2) : (-size/2));
+			}
 		}
 		void Draw(HDC MemDC)
 		{
-			double m = transform(x,y,z).first;
-			double n = transform(x,y,z).second;
-			SetPixel(MemDC, m, n, RGB(255,255,255));
+			int connect1[12]={0,0,1,2,4,4,6,5,0,1,2,3};
+			int connect2[12]={1,2,3,3,5,6,7,7,4,5,6,7};
+
+			for(int i=0; i<8; i++)
+			{
+				double m = transform(points[i].x,points[i].y,points[i].z).first;
+				double n = transform(points[i].x,points[i].y,points[i].z).second;
+				SetPixel(MemDC, m, n, RGB(255,255,255));
+			}
+			for(int i=0; i<12; i++)
+			{
+				double m1 = transform(points[connect1[i]].x, points[connect1[i]].y, points[connect1[i]].z).first;
+				double n1 = transform(points[connect1[i]].x, points[connect1[i]].y, points[connect1[i]].z).second;
+
+				double m2 = transform(points[connect2[i]].x, points[connect2[i]].y, points[connect2[i]].z).first;
+				double n2 = transform(points[connect2[i]].x, points[connect2[i]].y, points[connect2[i]].z).second;
+
+				MoveToEx(MemDC, m1, n1, NULL);
+				LineTo(MemDC, m2, n2);
+			}
 		}
 };
 
@@ -120,18 +158,56 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	HDC hdc, MemDC;
 	PAINTSTRUCT ps;
 
+	HBRUSH hBrush, oldBrush;
+	HPEN hPen, oldPen;
 	HBITMAP hBit, OldBit;
 	RECT crt;
+
+	static Cube cube[9];
 
 
 	switch (iMsg)
 	{
 	case WM_CREATE:
 		SetTimer(hWnd, 1, 10, 0);
+		cube[0].Set(40,0,0,20);
+		cube[1].Set(40,30,30,20);
+		cube[2].Set(40,-30,30,20);
+		cube[3].Set(40,30,-30,20);
+		cube[4].Set(40,-30,-30,20);
+		
+		cube[5].Set(40,60,0,20);
+		cube[6].Set(40,-60,0,20);
+		cube[7].Set(40,0,60,20);
+		cube[8].Set(40,0,-60,20);
 		break;
 
 	case WM_TIMER:
 		InvalidateRect(hWnd, NULL, FALSE);
+		ox = sin(phi*PI/180)*cos(theta*PI/180);
+		oy = sin(phi*PI/180)*sin(theta*PI/180);
+		oz = cos(phi*PI/180);
+		break;
+
+	case WM_KEYDOWN:
+		switch (wParam)
+		{
+			case 'W':
+				theta-=delta;
+				break;
+			case 'S':
+				theta+=delta;
+				break;
+			case 'A':
+				phi-=delta;
+				break;
+			case 'D':
+				phi+=delta;
+				break;
+		}
+		break;
+
+
 
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
@@ -140,26 +216,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		MemDC = CreateCompatibleDC(hdc);
 		hBit = CreateCompatibleBitmap(hdc, crt.right, crt.bottom);
 		OldBit = (HBITMAP)SelectObject(MemDC, hBit);
-		//hBrush = CreateSolidBrush(RGB(255, 255, 255));
-		//oldBrush = (HBRUSH)SelectObject(MemDC, hBrush);
-		//hPen = CreatePen(PS_SOLID, 5, RGB(255, 255, 255));
-		//oldPen = (HPEN)SelectObject(MemDC, hPen);
+		hBrush = CreateSolidBrush(RGB(255, 255, 255));
+		oldBrush = (HBRUSH)SelectObject(MemDC, hBrush);
+		hPen = CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
+		oldPen = (HPEN)SelectObject(MemDC, hPen);
 
 		//FillRect(MemDC, &crt, hBrush);
 		SetBkColor(MemDC, RGB(255, 255, 255));
 
-		for(int i=250; i<=350; i++)
-			for(int j=350; j<=450; j++)
-			SetPixel(MemDC, j, i, RGB(rand()%255, rand()%255, rand()%255));
 		//OnPaint(MemDC, TITLE0, 0, 0);
+		for(int i=0; i<9; i++)
+			cube[i].Draw(MemDC);
 
 		BitBlt(hdc, 0, 0, crt.right, crt.bottom, MemDC, 0, 0, SRCCOPY);
 		SelectObject(MemDC, OldBit);
 		DeleteDC(MemDC);
-		//SelectObject(MemDC, oldPen);
-		//DeleteObject(hPen);
-		//SelectObject(MemDC, oldBrush);
-		//DeleteObject(hBrush);
+		SelectObject(MemDC, oldPen);
+		DeleteObject(hPen);
+		SelectObject(MemDC, oldBrush);
+		DeleteObject(hBrush);
 		DeleteObject(hBit);
 
 		EndPaint(hWnd, &ps);
