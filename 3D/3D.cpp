@@ -23,17 +23,22 @@ void OnPaint(HDC hdc, int ID, int x, int y);
 void OnPaintA(HDC hdc, int ID, int x, int y, double alpha);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 
-LL D=60;
-double ox=1,oy=0,oz=0,delta=1,theta=0,phi=90;
+LL D=350;
+double ox=1,oy=0,oz=0,delta=1,theta=0,phi=90,origin_x,origin_y,origin_z;
 const double PI = 3.14159265358979;
+const int WIDTH=1200, HEIGHT=800;
 
 pair<double,double> transform(LL Px, LL Py, LL Pz)
 {
+	Px -= origin_x;
+	Py -= origin_y;
+	Pz -= origin_z;
+
 	double A = ox*Px + oy*Py+ oz*Pz;
 	double m = D*(Pz/A-oz)/sqrt(ox*ox+oy*oy);
 	double n = D*(Px*oy-Py*ox)/(A*sqrt(ox*ox+oy*oy));
 
-	return make_pair(m+400,n+300);
+	return make_pair(m+WIDTH/2,n+HEIGHT/2);
 }
 
 class point3
@@ -134,10 +139,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 		L"Window Class Name",
 		L"Window Title Name",
 		WS_OVERLAPPEDWINDOW,
-		GetSystemMetrics(SM_CXFULLSCREEN) / 2 - 400,
-		GetSystemMetrics(SM_CYFULLSCREEN) / 2 - 300,
-		800,
-		600,
+		GetSystemMetrics(SM_CXFULLSCREEN) / 2 - WIDTH/2,
+		GetSystemMetrics(SM_CYFULLSCREEN) / 2 - HEIGHT/2,
+		WIDTH,
+		HEIGHT,
 		NULL,
 		NULL,
 		hInstance,
@@ -163,23 +168,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	HBITMAP hBit, OldBit;
 	RECT crt;
 
-	static Cube cube[9];
-
+	static Cube cube[20];
 
 	switch (iMsg)
 	{
 	case WM_CREATE:
 		SetTimer(hWnd, 1, 10, 0);
-		cube[0].Set(40,0,0,20);
-		cube[1].Set(40,30,30,20);
-		cube[2].Set(40,-30,30,20);
-		cube[3].Set(40,30,-30,20);
-		cube[4].Set(40,-30,-30,20);
+		origin_x = origin_y = origin_z = 0;
+		cube[0].Set(400,0,0,40);
 		
-		cube[5].Set(40,60,0,20);
-		cube[6].Set(40,-60,0,20);
-		cube[7].Set(40,0,60,20);
-		cube[8].Set(40,0,-60,20);
+		cube[1].Set(400,50,50,40);
+		cube[2].Set(400,-50,50,40);
+		cube[3].Set(400,50,-50,40);
+		cube[4].Set(400,-50,-50,40);
+		
+		cube[5].Set(400,100,0,40);
+		cube[6].Set(400,-100,0,40);
+		cube[7].Set(400,0,100,40);
+		cube[8].Set(400,0,-100,40);
+
+		cube[9].Set(300,50,0,40);
+		cube[10].Set(300,-50,0,40);
+		cube[11].Set(300,0,50,40);
+		cube[12].Set(300,0,-50,40);
 		break;
 
 	case WM_TIMER:
@@ -204,6 +215,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			case 'D':
 				phi+=delta;
 				break;
+			case VK_UP:
+				origin_x += ox*5;
+				origin_y += oy*5;
+				origin_z += oz*5;
+				break;
+			case VK_DOWN:
+				origin_x -= ox*5;
+				origin_y -= oy*5;
+				origin_z -= oz*5;
+				break;
 		}
 		break;
 
@@ -225,7 +246,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		SetBkColor(MemDC, RGB(255, 255, 255));
 
 		//OnPaint(MemDC, TITLE0, 0, 0);
-		for(int i=0; i<9; i++)
+		for(int i=0; i<13; i++)
 			cube[i].Draw(MemDC);
 
 		BitBlt(hdc, 0, 0, crt.right, crt.bottom, MemDC, 0, 0, SRCCOPY);
