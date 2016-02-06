@@ -107,6 +107,11 @@ class Cube
 		}
 };
 
+
+class function
+{
+};
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
 	HWND     hWnd;
@@ -204,16 +209,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		switch (wParam)
 		{
 			case 'W':
-				theta-=delta;
-				break;
-			case 'S':
 				theta+=delta;
 				break;
+			case 'S':
+				theta-=delta;
+				break;
 			case 'A':
-				phi-=delta;
+				phi+=delta;
 				break;
 			case 'D':
-				phi+=delta;
+				phi-=delta;
 				break;
 			case VK_UP:
 				origin_x += ox*5;
