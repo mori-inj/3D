@@ -173,8 +173,8 @@ class Function
 					LineTo(MemDC, m2, n2);
 				}
 
-			for(int i=0; i<25; i++)
-				for(int j=0; j<24; j++)
+			for(int i=0; i<24; i++)
+				for(int j=0; j<25; j++)
 				{
 				
 					double m1 = transformL(points[i][j].x,points[i][j].y,points[i][j].z).first;
