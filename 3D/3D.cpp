@@ -7,6 +7,7 @@
 //#include "resource.h"
 
 #define LL long long
+#define LD long double
 
 using namespace Gdiplus;
 using namespace std;
@@ -35,8 +36,21 @@ pair<double,double> transform(LL Px, LL Py, LL Pz)
 	Pz -= origin_z;
 
 	double A = ox*Px + oy*Py+ oz*Pz;
-	double m = D*(Pz/A-oz)/sqrt(ox*ox+oy*oy);
-	double n = D*(Px*oy-Py*ox)/(A*sqrt(ox*ox+oy*oy));
+	double n = D*(oz-Pz/A)/sqrt(ox*ox+oy*oy);
+	double m = D*(Px*oy-Py*ox)/(A*sqrt(ox*ox+oy*oy));
+
+	return make_pair(m+WIDTH/2,n+HEIGHT/2);
+}
+
+pair<double,double> transformL(LD Px, LD Py, LD Pz)
+{
+	Px -= origin_x;
+	Py -= origin_y;
+	Pz -= origin_z;
+
+	double A = ox*Px + oy*Py+ oz*Pz;
+	double n = D*(oz-Pz/A)/sqrt(ox*ox+oy*oy);
+	double m = D*(Px*oy-Py*ox)/(A*sqrt(ox*ox+oy*oy));
 
 	return make_pair(m+WIDTH/2,n+HEIGHT/2);
 }
@@ -47,6 +61,14 @@ class point3
 		LL x;
 		LL y;
 		LL z;
+};
+
+class pointL3
+{
+	public:
+		LD x;
+		LD y;
+		LD z;
 };
 
 class Cube
@@ -108,8 +130,64 @@ class Cube
 };
 
 
-class function
+class Function
 {
+	private:
+		pointL3 points[25][25];
+	public:
+		LD func(LD x, LD y)
+		{
+			//return (x*x+y*y)/12;
+			return (x*x)*(x*x-64.0)/1000.0 + (y*y)*(y*y-64.0)/1000.0;
+		}
+		void Set()
+		{
+			for(int i=0; i<25; i++)
+				for(int j=0; j<25; j++)
+				{
+					points[i][j].x=i-12;
+					points[i][j].y=j-12;
+					points[i][j].z=this->func(i-12,j-12);
+				}
+		}
+		void Draw(HDC MemDC)
+		{
+			for(int i=0; i<25; i++)
+				for(int j=0; j<25; j++)
+				{
+					double m = transformL(points[i][j].x,points[i][j].y,points[i][j].z).first;
+					double n = transformL(points[i][j].x,points[i][j].y,points[i][j].z).second;
+					SetPixel(MemDC, m, n, RGB(255,255,255));
+				}
+			for(int i=0; i<25; i++)
+				for(int j=0; j<24; j++)
+				{
+				
+					double m1 = transformL(points[i][j].x,points[i][j].y,points[i][j].z).first;
+					double n1 = transformL(points[i][j].x,points[i][j].y,points[i][j].z).second;
+
+					double m2 = transformL(points[i][j+1].x,points[i][j+1].y,points[i][j+1].z).first;
+					double n2 = transformL(points[i][j+1].x,points[i][j+1].y,points[i][j+1].z).second;
+
+					MoveToEx(MemDC, m1, n1, NULL);
+					LineTo(MemDC, m2, n2);
+				}
+
+			for(int i=0; i<25; i++)
+				for(int j=0; j<24; j++)
+				{
+				
+					double m1 = transformL(points[i][j].x,points[i][j].y,points[i][j].z).first;
+					double n1 = transformL(points[i][j].x,points[i][j].y,points[i][j].z).second;
+
+					double m2 = transformL(points[i+1][j].x,points[i+1][j].y,points[i+1][j].z).first;
+					double n2 = transformL(points[i+1][j].x,points[i+1][j].y,points[i+1][j].z).second;
+
+					MoveToEx(MemDC, m1, n1, NULL);
+					LineTo(MemDC, m2, n2);
+				}
+		}
+
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
@@ -174,12 +252,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	RECT crt;
 
 	static Cube cube[20];
+	static Function function;
 
 	switch (iMsg)
 	{
 	case WM_CREATE:
 		SetTimer(hWnd, 1, 10, 0);
-		origin_x = origin_y = origin_z = 0;
+		function.Set();
+		origin_x = -100;
+		origin_y = origin_z = 0;
 		cube[0].Set(400,0,0,40);
 		
 		cube[1].Set(400,50,50,40);
@@ -209,16 +290,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		switch (wParam)
 		{
 			case 'W':
-				theta+=delta;
+				phi-=delta;
 				break;
 			case 'S':
-				theta-=delta;
-				break;
-			case 'A':
 				phi+=delta;
 				break;
+			case 'A':
+				theta+=delta;
+				break;
 			case 'D':
-				phi-=delta;
+				theta-=delta;
 				break;
 			case VK_UP:
 				origin_x += ox*5;
@@ -247,12 +328,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		hPen = CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
 		oldPen = (HPEN)SelectObject(MemDC, hPen);
 
-		//FillRect(MemDC, &crt, hBrush);
 		SetBkColor(MemDC, RGB(255, 255, 255));
 
-		//OnPaint(MemDC, TITLE0, 0, 0);
-		for(int i=0; i<13; i++)
-			cube[i].Draw(MemDC);
+		//for(int i=0; i<13; i++)
+		//	cube[i].Draw(MemDC);
+		function.Draw(MemDC);
+
 
 		BitBlt(hdc, 0, 0, crt.right, crt.bottom, MemDC, 0, 0, SRCCOPY);
 		SelectObject(MemDC, OldBit);
