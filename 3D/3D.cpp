@@ -356,7 +356,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, iMsg, wParam, lParam);
 }
 
-void OnPaint(HDC hdc, int ID, int x, int y)
+/*void OnPaint(HDC hdc, int ID, int x, int y)
 {
 	Graphics G(hdc);
 	HRSRC hResource = FindResource(g_hInst, MAKEINTRESOURCE(ID), TEXT("PNG"));
@@ -420,4 +420,4 @@ void OnPaintA(HDC hdc, int ID, int x, int y, double alpha)
 
 	RectF destination(0, 0, I.GetWidth(), I.GetHeight());
 	G.DrawImage(&I, destination, x, y, I.GetWidth(), I.GetHeight(), UnitPixel, &ImgAttr);
-}
+}*/
