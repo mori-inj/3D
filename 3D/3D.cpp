@@ -138,9 +138,10 @@ class Function
 		LD func(LD x, LD y)
 		{
 			//return (x*x+y*y)/12;
-			//return (x*x-16.0)*(x*x-64.0)/1000.0 + (y*y-16.0)*(y*y-64.0)/1000.0;
+			return (x*x-16.0)*(x*x-64.0)/1000.0 + (y*y-16.0)*(y*y-64.0)/1000.0;
 			//return sqrt(100-x*x-y*y);
-			return (x*x*x+y*y*y-3*x*y)/100;
+			//return (x*x*x+y*y*y-3*x*y)/100;
+			//return 10*sin(sqrt(x*x+y*y))/sqrt(x*x+y*y);
 		}
 		void Set()
 		{
