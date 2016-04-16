@@ -74,9 +74,9 @@ class pointL3
 class Cube
 {
 	private:
-		point3 p;
-		point3 points[8];
-		LL size;
+		pointL3 p;
+		pointL3 points[8];
+		LD size;
 	public:
 		void Set(LL x, LL y, LL z)
 		{
@@ -102,6 +102,59 @@ class Cube
 				points[i].x= x + ((i%2==0)? (size/2) : (-size/2));
 				points[i].y= y + (((i/2)%2==0)? (size/2) : (-size/2));
 				points[i].z= z + (((i/4)%2==0)? (size/2) : (-size/2));
+			}
+		}
+		void Set(LD x, LD y, LD z)
+		{
+			this->p.x = x;
+			this->p.y = y;
+			this->p.z = z;
+			for(int i=0; i<8; i++)
+			{
+				points[i].x=x+(i%2==0)? size/2 : -size/2;
+				points[i].y=y+(i/2%2==0)? size/2 : -size/2;
+				points[i].z=z+(i/4%2==0)? size/2 : -size/2;
+			}
+		}
+		void Set(LD x, LD y, LD z, LD size)
+		{
+			this->p.x = x;
+			this->p.y = y;
+			this->p.z = z;
+			this->size = size;
+
+			for(int i=0; i<8; i++)
+			{
+				points[i].x= x + ((i%2==0)? (size/2) : (-size/2));
+				points[i].y= y + (((i/2)%2==0)? (size/2) : (-size/2));
+				points[i].z= z + (((i/4)%2==0)? (size/2) : (-size/2));
+			}
+		}
+		void Yaw(int rot)
+		{
+			for(int i=0; i<8; i++)
+			{
+				pointL3 old;
+				old.x = points[i].x;
+				old.y = points[i].y;
+				old.z = points[i].z;
+
+				points[i].x = cos(rot*PI/180)*old.x - sin(rot*PI/180)*old.y;
+				points[i].y = sin(rot*PI/180)*old.x + cos(rot*PI/180)*old.y;
+				points[i].z = old.z;
+			}
+		}
+		void Pitch(int rot)
+		{
+			for(int i=0; i<8; i++)
+			{
+				pointL3 old;
+				old.x = points[i].x;
+				old.z = points[i].z;
+
+				points[i].x = cos(rot*PI/180)*old.x - sin(rot*PI/180)*old.z;
+				points[i].z = sin(rot*PI/180)*old.x + cos(rot*PI/180)*old.z;
+				//points[i][j].z = this->func((i-X/2)/scale,(j-Y/2)/scale);
 			}
 		}
 		void Draw(HDC MemDC)
@@ -133,37 +186,107 @@ class Cube
 class Function
 {
 	private:
-		pointL3 points[25][25];
+		pointL3 points[101][101];
 	public:
+		int theta_rot;
+		int X,Y,scale;
+		Function(void)
+		{
+			X = 101;
+			Y = 101;
+			scale = 4;
+			theta_rot = 0;
+		}
 		LD func(LD x, LD y)
 		{
 			//return (x*x+y*y)/12;
-			return (x*x-16.0)*(x*x-64.0)/1000.0 + (y*y-16.0)*(y*y-64.0)/1000.0;
-			//return sqrt(100-x*x-y*y);
+			//return (x*x-16.0)*(x*x-64.0)/1000.0 + (y*y-16.0)*(y*y-64.0)/1000.0;
+			return sqrt(100-x*x-y*y);
 			//return (x*x*x+y*y*y-3*x*y)/100;
 			//return 10*sin(sqrt(x*x+y*y))/sqrt(x*x+y*y);
 		}
+		LD solve(LD D_, LD X_, LD Y_)
+		{
+			int sign;
+			LD alpha = 1;
+			LD error = 987654321;
+			error = (Y_+alpha) - this->func(D_+alpha , X_+alpha);
+			if(error>0)
+				sign = 1;
+			else if(error<0)
+				sign = -1;
+
+			while(abs(error) > 0.1)
+			{
+				error = (Y_+alpha) - this->func(D_+alpha , X_+alpha);
+				if(sign*error > 0)
+					alpha *= 2;
+				else if(sign*error<0)
+					alpha /= 2;
+			}
+		}
+		/*int GetRot()
+		{
+			return theta_rot;
+		}
+		void SetRot(int rot)
+		{
+			theta_rot = rot;
+			if(theta_rot>180)
+				theta_rot = theta_rot - 360;
+			else if(theta_rot < -180)
+				theta_rot = theta_rot + 360;
+		}*/
 		void Set()
 		{
-			for(int i=0; i<25; i++)
-				for(int j=0; j<25; j++)
+			for(int i=0; i<X; i++)
+				for(int j=0; j<Y; j++)
 				{
-					points[i][j].x=i-12;
-					points[i][j].y=j-12;
-					points[i][j].z=this->func(i-12,j-12);
+					points[i][j].x = (i-X/2)/scale;
+					points[i][j].y = (j-Y/2)/scale;
+					points[i][j].z = this->func((i-X/2)/scale,(j-Y/2)/scale);
+				}
+		}
+		void Yaw(int rot)
+		{
+			for(int i=0; i<X; i++)
+				for(int j=0; j<Y; j++)
+				{
+					pointL3 old;
+					old.x = points[i][j].x;
+					old.y = points[i][j].y;
+					old.z = points[i][j].z;
+
+					points[i][j].x = cos(rot*PI/180)*old.x - sin(rot*PI/180)*old.y;
+					points[i][j].y = sin(rot*PI/180)*old.x + cos(rot*PI/180)*old.y;
+					points[i][j].z = old.z;
+				}
+		}
+		void Pitch(int rot)
+		{
+			for(int i=0; i<X; i++)
+				for(int j=0; j<Y; j++)
+				{
+					pointL3 old;
+					old.x = points[i][j].x;
+					old.z = points[i][j].z;
+
+					points[i][j].x = cos(rot*PI/180)*old.x - sin(rot*PI/180)*old.z;
+					points[i][j].z = sin(rot*PI/180)*old.x + cos(rot*PI/180)*old.z;
+					//points[i][j].z = this->func((i-X/2)/scale,(j-Y/2)/scale);
 				}
 		}
 		void Draw(HDC MemDC)
 		{
-			for(int i=0; i<25; i++)
-				for(int j=0; j<25; j++)
+			for(int i=0; i<X; i++)
+				for(int j=0; j<Y; j++)
 				{
 					double m = transformL(points[i][j].x,points[i][j].y,points[i][j].z).first;
 					double n = transformL(points[i][j].x,points[i][j].y,points[i][j].z).second;
-					SetPixel(MemDC, m, n, RGB(255,255,255));
+					SetPixel(MemDC, m, n, RGB(255,255,0));
 				}
-			for(int i=0; i<25; i++)
-				for(int j=0; j<24; j++)
+			for(int i=0; i<X; i++)
+				for(int j=0; j<Y-1; j++)
 				{
 				
 					double m1 = transformL(points[i][j].x,points[i][j].y,points[i][j].z).first;
@@ -176,8 +299,8 @@ class Function
 					LineTo(MemDC, m2, n2);
 				}
 
-			for(int i=0; i<24; i++)
-				for(int j=0; j<25; j++)
+			for(int i=0; i<X-1; i++)
+				for(int j=0; j<Y; j++)
 				{
 				
 					double m1 = transformL(points[i][j].x,points[i][j].y,points[i][j].z).first;
@@ -264,9 +387,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		function.Set();
 		origin_x = -100;
 		origin_y = origin_z = 0;
-		cube[0].Set(400,0,0,40);
+		cube[0].Set((LD)0.0,(LD)0.0,(LD)0.0,(LD)40.0);
 		
-		cube[1].Set(400,50,50,40);
+		/*cube[1].Set(400,50,50,40);
 		cube[2].Set(400,-50,50,40);
 		cube[3].Set(400,50,-50,40);
 		cube[4].Set(400,-50,-50,40);
@@ -279,7 +402,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		cube[9].Set(300,50,0,40);
 		cube[10].Set(300,-50,0,40);
 		cube[11].Set(300,0,50,40);
-		cube[12].Set(300,0,-50,40);
+		cube[12].Set(300,0,-50,40);*/
 		break;
 
 	case WM_TIMER:
@@ -292,6 +415,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	case WM_KEYDOWN:
 		switch (wParam)
 		{
+			case 'H':
+				function.Yaw(-5);
+				//cube[0].Yaw(-5);
+				break;
+			case 'L':
+				function.Yaw(+5);
+				//cube[0].Yaw(+5);
+				break;
+			case 'J':
+				function.Pitch(-5);
+				//cube[0].Pitch(-5);
+				break;
+			case 'K':
+				function.Pitch(+5);
+				//cube[0].Pitch(+5);
+				break;
 			case 'W':
 				phi-=delta;
 				break;
@@ -333,9 +472,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 		SetBkColor(MemDC, RGB(255, 255, 255));
 
+
 		//for(int i=0; i<13; i++)
 		//	cube[i].Draw(MemDC);
 		function.Draw(MemDC);
+		//cube[0].Draw(MemDC);
 
 
 		BitBlt(hdc, 0, 0, crt.right, crt.bottom, MemDC, 0, 0, SRCCOPY);
