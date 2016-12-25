@@ -78,7 +78,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="3D%28legacy%29.cpp" />
     <ClCompile Include="3D.cpp" />
+    <ClCompile Include="cube.cpp" />
+    <ClCompile Include="drawee.cpp" />
+    <ClCompile Include="edge.cpp" />
+    <ClCompile Include="function.cpp" />
+    <ClCompile Include="matrix2by2.cpp" />
+    <ClCompile Include="observer.cpp" />
+    <ClCompile Include="point2d.cpp" />
+    <ClCompile Include="point3d.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="cube.h" />
+    <ClInclude Include="drawable.h" />
+    <ClInclude Include="drawee.h" />
+    <ClInclude Include="edge.h" />
+    <ClInclude Include="function.h" />
+    <ClInclude Include="matrix2by2.h" />
+    <ClInclude Include="observer.h" />
+    <ClInclude Include="point2d.h" />
+    <ClInclude Include="point3d.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
