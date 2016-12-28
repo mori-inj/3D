@@ -11,7 +11,6 @@
 class Observer
 {
 private:
-    static Observer::Point3D O;
     static Point3D N;
     static Point3D U;
     static Point3D R;
@@ -19,9 +18,6 @@ private:
     static LD dtheta;
 
     static const LD step;
-
-    static LD Width;
-    static LD Height;
 
     static Matrix2by2 XY;
     static Matrix2by2 YZ;
@@ -38,12 +34,17 @@ private:
 	static LD max3(LD a, LD b, LD c);
 	
 public:
+	static Point3D O;
+	static LD Width;
+    static LD Height;
     Observer();
 	static void Axis(HDC MemDC);
 	//static void Update(HDC MemDC);
     static void Scroll(int delta);
     static void Transform(WPARAM wParam);
     static Point2D* Projection(Point3D P);
+	static Point3D* InverseProjection(Point2D P);
+	static Point3D* InverseProjectionVector(Point2D P);
 	static Point2D* ProjectionAxis(Point3D P);
 };
 

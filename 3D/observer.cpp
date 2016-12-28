@@ -307,3 +307,15 @@ Point2D* Observer::Projection(Point3D P)
     }
     return new Point2D(ans.X + Width / 2, -ans.Y + Height / 2);
 }
+
+Point3D* Observer::InverseProjection(Point2D P)
+{
+	return new Point3D(O + D*N + P.X*R + P.Y*U);
+}
+
+Point3D* Observer::InverseProjectionVector(Point2D P)
+{
+	Point3D* ret = new Point3D(D*N + P.X*R + P.Y*U);
+	ret->norm();
+	return ret;
+}

@@ -76,18 +76,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
-	HDC hdc, MemDC;
 	PAINTSTRUCT ps;
+	HDC hdc, MemDC;
 
 	HBITMAP hBit, OldBit;
 	RECT crt;
 
-	//HBRUSH hBrush, oldBrush;
 	static HPEN hPen, oldPen;
 
 	static Cube cube[6][10][10];
 	static Function func;
-
 
 	switch (iMsg)
 	{
@@ -95,7 +93,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		Observer::Observer();
 		hPen = CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
 		
-		for (int i = 0; i < 10; i++)
+		/*for (int i = 0; i < 10; i++)
 		{
 			for (int j = 0; j < 10; j++)
 			{
@@ -141,10 +139,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			{
 				cube[5][i][j] = Cube(Point3D(-400 + 80 * i, -400 + 80 * j, 850), 20.0);
 			}
-		}
+		}*/
 		
-		//func = Function(Point3D(450, 0, 0));
-		SetTimer(hWnd, 1, 10, 0);
+		func = Function(Point3D(1000, 0, 0));
+		InvalidateRect(hWnd, NULL, FALSE);
+		//SetTimer(hWnd, 1, 10, 0);
 		break;
 
 	case WM_TIMER:
@@ -158,61 +157,65 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		MemDC = CreateCompatibleDC(hdc);
 		hBit = CreateCompatibleBitmap(hdc, crt.right, crt.bottom);
 		OldBit = (HBITMAP)SelectObject(MemDC, hBit);
-		//hBrush = CreateSolidBrush(RGB(255, 255, 255));
-		//oldBrush = (HBRUSH)SelectObject(MemDC, hBrush);
 		oldPen = (HPEN)SelectObject(MemDC, hPen);
-		
-
-		//FillRect(MemDC, &crt, hBrush);
-		
-		//SetBkColor(MemDC, RGB(255, 255, 255));
 		Observer::Axis(MemDC);
 		
+		/*
 		for(int k=0; k<6; k++)
 		{
-		for (int i = 0; i < 10; i++)
-        {
-            for (int j = 0; j < 10; j++)
-            {
-                cube[k][i][j].Update(MemDC);
-            }
-        }
+			for (int i = 0; i < 10; i++)
+			{
+				for (int j = 0; j < 10; j++)
+				{
+					cube[k][i][j].Update(MemDC);
+				}
+			}
 		}
+		*/
 		
 		
 		//func.Update(MemDC);
+		func.RayTrace(MemDC);
 
 		BitBlt(hdc, 0, 0, crt.right, crt.bottom, MemDC, 0, 0, SRCCOPY);
 		SelectObject(MemDC, OldBit);
 		DeleteDC(MemDC);
 		SelectObject(MemDC, oldPen);
 		//DeleteObject(hPen);
-		//SelectObject(MemDC, oldBrush);
-		//DeleteObject(hBrush);
 		DeleteObject(hBit);
 
 		EndPaint(hWnd, &ps);
 		break;
 
+	case WM_SIZE:
+		Observer::Width = LOWORD(lParam);
+		Observer::Height = HIWORD(lParam);
+		InvalidateRect(hWnd, NULL, FALSE);//
+		break;
+
 	case WM_KEYDOWN:
 		Observer::Transform(wParam);
 		
+		/*
 		for(int k=0; k<6; k++)
 		{
-		for (int i = 0; i < 10; i++)
-        {
-            for (int j = 0; j < 10; j++)
-            {
-                cube[k][i][j].Rotate(wParam);
-            }
-        }
+			for (int i = 0; i < 10; i++)
+			{
+				for (int j = 0; j < 10; j++)
+				{
+					cube[k][i][j].Rotate(wParam);
+				}
+			}
 		}
-		
-		//func.Rotate(wParam);
+		*/
+		func.Rotate(wParam);
+		func.TranslateLight(wParam);
+		InvalidateRect(hWnd, NULL, FALSE);//
 		break;
 
 	case WM_MOUSEWHEEL:
 		Observer::Scroll(GET_WHEEL_DELTA_WPARAM(wParam));
+		InvalidateRect(hWnd, NULL, FALSE);//
 		break;
 
 	case WM_DESTROY:

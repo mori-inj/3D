@@ -4,6 +4,8 @@
 Drawee::Drawee(Point3D origin)
 {
     this->origin = origin;
+	maxX = maxY = -1e9;
+	minX = minY = 1e9;
 	dots = vector<Point3D*>();
 	edges = vector<Edge*>();
 }
@@ -22,7 +24,6 @@ void Drawee::Update(HDC MemDC)
 
 			LD m2 = (double)dotE.X;
 			LD n2 = (double)dotE.Y;
-
 
 			MoveToEx(MemDC, (int)m1, (int)n1, NULL);
 			LineTo(MemDC, (int)m2, (int)n2);

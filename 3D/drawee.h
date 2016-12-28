@@ -18,6 +18,7 @@ protected:
     vector<Edge*> edges;
 
 public:
+	LD minX, minY, maxX, maxY;
 	Drawee() {};
     Drawee(Point3D origin);
     void Update(HDC MemDC);
