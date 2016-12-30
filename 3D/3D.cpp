@@ -141,7 +141,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 		}*/
 		
-		func = Function(Point3D(1000, 0, 0));
+		func = Function(Point3D(0, 0, 0));
 		InvalidateRect(hWnd, NULL, FALSE);
 		//SetTimer(hWnd, 1, 10, 0);
 		break;

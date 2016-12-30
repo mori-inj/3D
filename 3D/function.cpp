@@ -2,9 +2,9 @@
 
 Function::Function(Point3D origin) : Drawee(origin)
 {
-    size = 400;
-	scale = (int)4000.0/size;
-	L = Point3D(-1300, 0,2000);
+    size = 40;
+	scale = 1;
+	L = Point3D(-1300, 0, 2000);
     int cnt = 0;
     for (int i = -size / 2; i <= size / 2; i++)
     {
@@ -29,33 +29,43 @@ LD Function::eval(LD x, LD y)
 	x -= origin.X;
 	y -= origin.Y;
     //return (LD)0.01 * (x * x + y * y);
-    return (LD)sqrt(40000-(double)(x * x + y * y));
+    //return (LD)sqrt(100-(double)(x * x + y * y));
 	//return -x-y;
+	//return (x*x-16.0)*(x*x-64.0)/100.0 + (y*y-16.0)*(y*y-64.0)/100.0;
+	return ((x+y)*(x+y)-16.0)*((x+y)*(x+y)-64.0)/100.0 + ((x-y)*(x-y)-16.0)*((x-y)*(x-y)-64.0)/100.0;
 }
 
 LD Function::f(Point3D t)
 {
 	//return eval(t.X, t.Y)-t.Z;
-	return (t.X-origin.X)*(t.X-origin.X)+(t.Y-origin.Y)*(t.Y-origin.Y)+(t.Z-origin.Z)*(t.Z-origin.Z)-40000;
+	//return (t.X-origin.X)*(t.X-origin.X)+(t.Y-origin.Y)*(t.Y-origin.Y)+(t.Z-origin.Z)*(t.Z-origin.Z)-100;
 	//return t.X+t.Y+t.Z;
+	//return eval(t.X, t.Y)-t.Z; 
+	return eval(t.X, t.Y)-t.Z; 
 }
 LD Function::diff_X(Point3D t)
 {
 	//return (LD)0.01 * (2*t.X - 2*origin.X);
-	return 2*t.X - 2*origin.X;
+	//return 2*t.X - 2*origin.X;
 	//return 1;
+	//return (4* t.X * t.X * t.X - 160 * t.X)/100.0;
+	return (8*t.X*(t.X*t.X + 3*t.Y*t.Y-48))/100.0;
 }
 LD Function::diff_Y(Point3D t)
 {
 	//return (LD)0.01 * (2*t.Y - 2*origin.Y);
-	return 2*t.Y - 2*origin.Y;
+	//return 2*t.Y - 2*origin.Y;
 	//return 1;
+	//return (4* t.Y * t.Y * t.Y - 160 * t.Y)/100.0;
+	return (8*t.Y*(3*t.X*t.X + t.Y*t.Y-48))/100.0;
 }
 LD Function::diff_Z(Point3D t)
 {
 	//return -1;//(LD)0.01 * (2*t.Z - 2*origin.Z);
-	return 2*t.Z - 2*origin.Z;
+	//return 2*t.Z - 2*origin.Z;
 	//return 1;
+	//return -1;
+	return -1;
 }
 LD Function::diff(Point3D t, Point3D T)
 {
@@ -64,8 +74,6 @@ LD Function::diff(Point3D t, Point3D T)
 
 void Function::RayTrace(HDC MemDC)
 {
-	printf("start!!\n");
-	fflush(stdout);
 	int Width = Observer::Width;
 	int Height = Observer::Height;
 	HPEN hPen, oldPen;
@@ -100,83 +108,99 @@ void Function::RayTrace(HDC MemDC)
 		catch(int e) {}
 	}
 
-	/*int** screen = new int*[Height];
+	/*LD** screen = new LD*[Height];
 	for(int i=0; i<Height; i++)
-		screen[i] = new int[Width];*/
-	for(int i=minY; i<600; i+=1)
 	{
-		for(int j=minX; j<maxX; j+=1)
+		screen[i] = new LD[Width];
+		for(int j=0; j<Width; j++)
+			screen[i][j] = -1e9;
+	}*/
+
+	int shade_scale = 1;
+	int loop = 20;
+	Point3D O = Observer::O;	
+	LD error = 2.0;
+	LD dist1 = 10*sqrt( (origin - O) * (origin - O) );
+	LD dist2 = -10*sqrt( (origin - O) * (origin - O) );
+
+	for(int i=((int)minY/shade_scale)*shade_scale; i<=600-minY; i+=shade_scale)
+	{
+		for(int j=((int)minX/shade_scale)*shade_scale; j<=maxX; j+=shade_scale)
 		{
 			Point3D Q = *Observer::InverseProjection(Point2D(j-Width/2,-(i-Height/2)));
 			Point3D T = *Observer::InverseProjectionVector(Point2D(j-Width/2,-(i-Height/2)));
-			Point3D O = Observer::O;
+			int k1,k2;
 
-
-			LD dist1 = 10*sqrt( (origin - O) * (origin - O) );
 			Point3D temp1 = Q+dist1*T;
 			LD t1 = dist1 - f(temp1) / diff(temp1,T);
-			//printf("Q: (%Lf, %Lf, %Lf)\n",Q.X, Q.Y, Q.Z);
-			//printf("bf: (%d, %d): %Lf (%Lf,%Lf,%Lf)\n",j,i,f(Q+t0*T),(Q+t0*T).X,(Q+t0*T).Y,(Q+t0*T).Z);
-			for(int k = 0; k<20 && abs(f(temp1)) > 1; k++)
+			for(k1 = 0; k1<loop && abs(f(temp1)) > error; k1++)
 			{
 				temp1 = Q+t1*T;
 				t1 -= f(temp1) / diff(temp1,T);
 			}
 
-			LD dist2 = -10*sqrt( (origin - O) * (origin - O) );
 			Point3D temp2 = Q+dist2*T;
 			LD t2 = dist2 - f(temp2) / diff(temp2,T);
-			//printf("Q: (%Lf, %Lf, %Lf)\n",Q.X, Q.Y, Q.Z);
-			//printf("bf: (%d, %d): %Lf (%Lf,%Lf,%Lf)\n",j,i,f(Q+t0*T),(Q+t0*T).X,(Q+t0*T).Y,(Q+t0*T).Z);
-			for(int k = 0; k<20 && abs(f(temp2)) > 1; k++)
+			for(k2 = 0; k2<loop && abs(f(temp2)) > error; k2++)
 			{
 				temp2 = Q+t2*T;
 				t2 -= f(temp2) / diff(temp2,T);
 			}
 
-			Point3D temp;
-
-			if (abs(f(temp1)) > 1 &&  abs(f(temp2)) > 1)
+			Point3D W;
+			if (k1 == loop && k2 == loop)
 			{
-				//printf("!!!!!!!!!!!!!!!!!!!!!\n");
 				continue;
 			}
-			else if (abs(f(temp1)) > 1)
-				temp = temp2;
-			else if (abs(f(temp2)) > 1)
-				temp = temp1;
+			else if (k1 == loop)
+				W = temp2;
+			else if (k2 == loop)
+				W = temp1;
 			else
 			{
 				if((O-temp1)*(O-temp1) < (O-temp2)*(O-temp2))
-					temp = temp1;
+					W = temp1;
 				else
-					temp = temp2;
+					W = temp2;
 			}
 
-			//printf("at: (%d, %d): %Lf (%Lf,%Lf,%Lf)\n\n",j,i,f(Q+t0*T),(Q+t0*T).X,(Q+t0*T).Y,(Q+t0*T).Z);
-			if(abs(f(temp)) <= 1)
+
+			Point3D V = W - L;
+			Point3D grad = Point3D(diff_X(W), diff_Y(W), diff_Z(W));
+			grad.norm();
+			Point3D _V = V - 2* ((V*grad) / (grad*grad)) * grad;
+			LD cross = _V * (O-W);
+			LD light = cross / (sqrt(_V*_V)*sqrt((O-W)*(O-W)));
+			light = (light+1)/2;
+			//light *= light;
+
+			/*LD cross = _V*grad;
+			LD light = cross / (sqrt(V*V)*sqrt(grad*grad));*/
+
+			hPen = CreatePen(PS_SOLID, 1, RGB(0*light, 255*light, 255*light));
+			oldPen = (HPEN)SelectObject(MemDC, hPen);
+			MoveToEx(MemDC, (int)j, (int)i, NULL);
+			LineTo(MemDC, (int)j+1, (int)i+1);
+			DeleteObject(hPen);
+		}
+
+		/*for(int i=((int)minY/shade_scale)*shade_scale; i<=600-minY; i++)
+		{
+			for(int j=((int)minX/shade_scale)*shade_scale; j<=maxX; j++)
 			{
-				//printf("yes\n");
-				//fflush(stdout);
-				Point3D W = temp;
-				Point3D V = W - L;
-				Point3D grad = Point3D(diff_X(W), diff_Y(W), diff_Z(W));
-				grad.norm();
-				Point3D _V = V - 2* ((V*grad) / (grad*grad)) * grad;
-				LD cross = _V * (O-W);
-				if(cross < 0)
+				LD light = screen[i][j];
+				if(light<0)
 				{
-					printf("|_V|: %Lf\n|O-W|:%Lf\n|_V|*|O-W|:%Lf\ncross:%Lf\ncos:%Lf\n%Lf %Lf %Lf -> %d %d\n\n",
-						sqrt(_V*_V),
-						sqrt((O-W)*(O-W)),
-						sqrt(_V*_V)*sqrt((O-W)*(O-W)),
-						cross,
-						cross / (sqrt(_V*_V)*sqrt((O-W)*(O-W))),
-						W.X, W.Y, W.Z,i,j);
-					fflush(stdout);
+					int x1 = j/shade_scale*shade_scale;
+					int x2 = j/shade_scale*shade_scale + shade_scale;
+					int y1 = i/shade_scale*shade_scale;
+					int y2 = i/shade_scale*shade_scale + shade_scale;
+
+					light = ( screen[y1][x1]*(x2-j)*(y2-i)
+							+ screen[y1][x2]*(j-x1)*(y2-i)
+							+ screen[y2][x1]*(x2-j)*(i-y1)
+							+ screen[y2][x2]*(j-x1)*(i-y1) ) / ((x2-x1)*(y2-y1));
 				}
-				LD light = cross / (sqrt(_V*_V)*sqrt((O-W)*(O-W)));
-				light = abs(light);
 
 				hPen = CreatePen(PS_SOLID, 1, RGB(0*light, 255*light, 255*light));
 				oldPen = (HPEN)SelectObject(MemDC, hPen);
@@ -184,7 +208,7 @@ void Function::RayTrace(HDC MemDC)
 				LineTo(MemDC, (int)j+1, (int)i+1);
 				DeleteObject(hPen);
 			}
-		}
+		}*/
 		
 	}
 

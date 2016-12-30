@@ -43,7 +43,7 @@ Observer::Observer()
 	U = Point3D(0.0, 0.0, 1.0);
 	R = N^U;
 	D = 750;
-	dtheta = 1.0 * (LD)PI / 180.0;
+	dtheta = 10.0 * (LD)PI / 180.0;
 
 	Width = 800;
 	Height = 600;
